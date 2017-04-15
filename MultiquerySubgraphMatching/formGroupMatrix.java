@@ -20,6 +20,7 @@ public class formGroupMatrix {
     List<List<Label>> TLS_sequencesInLabels = new LinkedList<List<Label>>();
     Map<String, Map<String, List<List<Label>>>> TLS_QueryPairs = new LinkedHashMap<String, Map<String, List<List<Label>>>>();
     Map<String, Map<String, Float>> groupMatrix = new LinkedHashMap<String, Map<String, Float>>();
+    Map<String, GraphDatabaseService> queryToDBServiceMapping = new LinkedHashMap<String, GraphDatabaseService>();
 
     public void parse_testQueries(File[] files) {
         String lineRead;
@@ -176,11 +177,13 @@ public class formGroupMatrix {
         for (File queryFile : queries) {
             if (queryFile.isDirectory() && !queryFile.getName().equals(".DS_Store")) {
                 GraphDatabaseService database = graphInstance.newEmbeddedDatabase(queryFile);
+                String queryFileName = queryFile.getName().split("\\.")[0];
+                queryToDBServiceMapping.put(queryFileName, database);
                 TLS_sequencesInLabels = new LinkedList<List<Label>>();
                 try (Transaction transac = database.beginTx()) {
                     ResourceIterable<Node> allNodes = database.getAllNodes();
-                    immediateNeighbors.put(queryFile.getName().split("\\.")[0], new LinkedHashMap<Node, Set<Node>>());
-                    Map<Node, Set<Node>> TLS_wrtQuery = immediateNeighbors.get(queryFile.getName().split("\\.")[0]);
+                    immediateNeighbors.put(queryFileName, new LinkedHashMap<Node, Set<Node>>());
+                    Map<Node, Set<Node>> TLS_wrtQuery = immediateNeighbors.get(queryFileName);
 
                     //Here we fetch all the first degree neighbors of every node from the query graph.
                     for (Node nodes : allNodes) {
@@ -191,8 +194,8 @@ public class formGroupMatrix {
                         }
                     }
                     List<List<Node>> TLS_sequencesInNodes = checkTheThirdVertex(TLS_wrtQuery);
-                    TLS_map_usingNodeIds.put(queryFile.getName().split("\\.")[0], TLS_sequencesInNodes);
-                    TLS_map.put(queryFile.getName().split("\\.")[0], TLS_sequencesInLabels);
+                    TLS_map_usingNodeIds.put(queryFileName, TLS_sequencesInNodes);
+                    TLS_map.put(queryFileName, TLS_sequencesInLabels);
 
                     transac.success();
 
@@ -201,28 +204,33 @@ public class formGroupMatrix {
         }
     }
 
+    //This method = LI(qi,TLS(qi,qj)).
     public void validateAgainstQi(String qi, List<List<Label>> qj_set, List<Node> solutionSet_Qi) {
-        List<List<Node>> sequences_InNodes = TLS_map_usingNodeIds.get(qi);
-        for (List<Label> sequences_L : qj_set) {
-            for (List<Node> sequences_N : sequences_InNodes) {
-                if (checkForThisTriplet(sequences_L, sequences_N)) {
-                    if (solutionSet_Qi.isEmpty()) {
-                        solutionSet_Qi = new LinkedList<Node>() {{
-                            add(sequences_N.get(0));
-                            add(sequences_N.get(1));
-                            add(sequences_N.get(2));
-                        }};
-                    } else {
-                        if (sequencesN_NOT_DisjointFromSolutionSet(solutionSet_Qi, sequences_N)) { //i.e. solutionSet and sequences_N has one or two common nodes.
-                            for (Node n : sequences_N) {
-                                if (!solutionSet_Qi.contains(n)) {
-                                    solutionSet_Qi.add(n);
+        GraphDatabaseService DB = queryToDBServiceMapping.get(qi);
+        try (Transaction tx = DB.beginTx()) {
+            List<List<Node>> sequences_InNodes = TLS_map_usingNodeIds.get(qi);
+            for (List<Label> sequences_L : qj_set) {
+                for (List<Node> sequences_N : sequences_InNodes) {
+                    if (checkForThisTriplet(sequences_L, sequences_N)) {
+                        if (solutionSet_Qi.isEmpty()) {
+                            solutionSet_Qi = new LinkedList<Node>() {{
+                                add(sequences_N.get(0));
+                                add(sequences_N.get(1));
+                                add(sequences_N.get(2));
+                            }};
+                        } else {
+                            if (sequencesN_NOT_DisjointFromSolutionSet(solutionSet_Qi, sequences_N)) { //i.e. solutionSet and sequences_N has one or two common nodes.
+                                for (Node n : sequences_N) {
+                                    if (!solutionSet_Qi.contains(n)) {
+                                        solutionSet_Qi.add(n);
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+            tx.success();
         }
     }
 
@@ -264,36 +272,44 @@ public class formGroupMatrix {
     }
 
     //Note that we are acting upon a single instance of "solutionSet" in this method.
-    //Also, note that we have not covered the case if we were to start with an outcast TLS (like 'D-C-E').
+    //Also, note that we have not covered the case if we were to start with an outcast TLS (like 'D-C-E') in the two "Validate" methods.
+
+    //This method = LI(qj,TLS(qi,qj)).
     public void validateAgainstQj(String qj, List<List<Label>> qj_set, List<Node> solutionSet_Qj) {
         //while(solutionSet_Qj.size() <= 1) { //Since we don't want a subgraph with 2 or less edges. A single TLS has two edges.
-        List<List<Node>> sequences_InNodes = TLS_map_usingNodeIds.get(qj);
-        for (List<Label> sequences_L : qj_set) {
-            for (List<Node> sequences_N : sequences_InNodes) {
-                if (checkForThisTriplet(sequences_L, sequences_N)) {
-                    if (solutionSet_Qj.isEmpty()) {
-                        solutionSet_Qj = new LinkedList<Node>() {{
-                            add(sequences_N.get(0));
-                            add(sequences_N.get(1));
-                            add(sequences_N.get(2));
-                        }};
-                    } else {
-                        if (sequencesN_NOT_DisjointFromSolutionSet(solutionSet_Qj, sequences_N)) { //i.e. solutionSet and sequences_N has one or two common nodes.
-                            for (Node n : sequences_N) {
-                                if (!solutionSet_Qj.contains(n)) {
-                                    solutionSet_Qj.add(n);
+        GraphDatabaseService DB = queryToDBServiceMapping.get(qj);
+        try (Transaction tx = DB.beginTx()) {
+
+            List<List<Node>> sequences_InNodes = TLS_map_usingNodeIds.get(qj);
+            for (List<Label> sequences_L : qj_set) {
+                for (List<Node> sequences_N : sequences_InNodes) {
+                    if (checkForThisTriplet(sequences_L, sequences_N)) {
+                        if (solutionSet_Qj.isEmpty()) {
+                            solutionSet_Qj = new LinkedList<Node>() {{
+                                add(sequences_N.get(0));
+                                add(sequences_N.get(1));
+                                add(sequences_N.get(2));
+                            }};
+                        } else {
+                            if (sequencesN_NOT_DisjointFromSolutionSet(solutionSet_Qj, sequences_N)) { //i.e. solutionSet and sequences_N has one or two common nodes.
+                                for (Node n : sequences_N) {
+                                    if (!solutionSet_Qj.contains(n)) {
+                                        solutionSet_Qj.add(n);
+                                    }
                                 }
                             }
                         }
+                        break;
                     }
                 }
             }
-        }
             /*if(solutionSet_Qj.size() == 1){*/
             /*    qj_set.remove(solutionSet_Qj.get(0));*/
             /*    solutionSet_Qj.clear();*/
             /*}*/
-        //}
+            //}
+            tx.success();
+        }
     }
 
     public int checkWhichTLSInstancesFormLargestSubgraph(String qi, String qj, List<List<Label>> qj_set) {
@@ -303,12 +319,11 @@ public class formGroupMatrix {
         validateAgainstQj(qj, qj_set, solutionSet_Qj);
 
         // So, we now have LI(qi,TLS(qi,qj)) and LI(qj,TLS(qi,qj)) for all qi and qj in the form of the Solution Set size.
-        return Math.min(solutionSet_Qi.size(),solutionSet_Qj.size());
+        return Math.min(solutionSet_Qi.size(), solutionSet_Qj.size());
     }
 
 
     public void createGroupMatrix() {
-
         Iterator itr = TLS_QueryPairs.entrySet().iterator();
         while (itr.hasNext()) {
             Map.Entry pairs = (Map.Entry) itr.next();
@@ -316,13 +331,15 @@ public class formGroupMatrix {
             Iterator itr_qj = qj.entrySet().iterator();
 
             while (itr_qj.hasNext()) {
-                Map.Entry pairs_qj = (Map.Entry) itr.next();
+                Map.Entry pairs_qj = (Map.Entry) itr_qj.next();
                 //I create a new instance here just to avoid editing the values in the map 'qj'.
                 List<List<Label>> qj_set = new LinkedList<List<Label>>((List<List<Label>>) pairs_qj.getValue());
                 int minimumLIValue = checkWhichTLSInstancesFormLargestSubgraph((String) pairs.getKey(), (String) pairs_qj.getKey(), qj_set);
-                int minTLSSizeForQueries = Math.min(TLS_map.get((String) pairs.getKey()).size(),TLS_map.get((String) pairs_qj.getKey()).size());
-                Float GF_value = Float.valueOf(minimumLIValue/minTLSSizeForQueries);
-                groupMatrix.put((String) pairs.getKey(), new LinkedHashMap<String, Float>(){{ put((String) pairs_qj.getKey(),GF_value);}});
+                int minTLSSizeForQueries = Math.min(TLS_map.get((String) pairs.getKey()).size(), TLS_map.get((String) pairs_qj.getKey()).size());
+                Float GF_value = Float.valueOf(minimumLIValue / minTLSSizeForQueries);
+                groupMatrix.put((String) pairs.getKey(), new LinkedHashMap<String, Float>() {{
+                    put((String) pairs_qj.getKey(), GF_value);
+                }});
             }
         }
 
