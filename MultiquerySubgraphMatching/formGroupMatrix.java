@@ -205,21 +205,25 @@ public class formGroupMatrix {
     }
 
     //This method = LI(qi,TLS(qi,qj)).
-    public void validateAgainstQi(String qi, List<List<Label>> qj_set, List<Node> solutionSet_Qi) {
+    public int validateAgainstQi(String qi, List<List<Label>> qj_set, List<Node> solutionSet_Qi) {
         GraphDatabaseService DB = queryToDBServiceMapping.get(qi);
+        int numberOfInstancesInQi = 0;
         try (Transaction tx = DB.beginTx()) {
             List<List<Node>> sequences_InNodes = TLS_map_usingNodeIds.get(qi);
             for (List<Label> sequences_L : qj_set) {
                 for (List<Node> sequences_N : sequences_InNodes) {
                     if (checkForThisTriplet(sequences_L, sequences_N)) {
+                        System.out.println("sequences_L--> " + sequences_L);
+                        System.out.println("sequences_N--> " + sequences_N);
+
                         if (solutionSet_Qi.isEmpty()) {
-                            solutionSet_Qi = new LinkedList<Node>() {{
-                                add(sequences_N.get(0));
-                                add(sequences_N.get(1));
-                                add(sequences_N.get(2));
-                            }};
+                            solutionSet_Qi.add(sequences_N.get(0));
+                            solutionSet_Qi.add(sequences_N.get(1));
+                            solutionSet_Qi.add(sequences_N.get(2));
+                            numberOfInstancesInQi++;
                         } else {
                             if (sequencesN_NOT_DisjointFromSolutionSet(solutionSet_Qi, sequences_N)) { //i.e. solutionSet and sequences_N has one or two common nodes.
+                                numberOfInstancesInQi++;
                                 for (Node n : sequences_N) {
                                     if (!solutionSet_Qi.contains(n)) {
                                         solutionSet_Qi.add(n);
@@ -227,21 +231,25 @@ public class formGroupMatrix {
                                 }
                             }
                         }
+                        System.out.println("Solution Set Qi--> " + solutionSet_Qi);
+                        break;
                     }
                 }
             }
             tx.success();
         }
+        return numberOfInstancesInQi;
     }
 
     //Assuming every node can have a single label at the max.
-    public boolean compareLabels(Label labelName, Iterable<Label> labels) {
-        for (Label l : labels) {
-            if (labelName.toString().equals(l.toString())) {
-                return true;
-            }
-        }
-        return false;
+    public boolean compareLabels(Label labelName, Label targetLabel) {
+        /*for (Label l : labels) {*/
+        /*    if (labelName.toString().equals(l.toString())) {*/
+        /*        return true;*/
+        /*    }*/
+        /*}*/
+        /*return false;*/
+        return labelName.toString().equals(targetLabel.toString());
     }
 
 
@@ -249,9 +257,9 @@ public class formGroupMatrix {
         Node first = sequences_N.get(0);
         Node middle = sequences_N.get(1);
         Node last = sequences_N.get(2);
-        boolean res_first = compareLabels(sequences_L.get(0), first.getLabels());
-        boolean res_middle = compareLabels(sequences_L.get(1), middle.getLabels());
-        boolean res_last = compareLabels(sequences_L.get(2), last.getLabels());
+        boolean res_first = compareLabels(sequences_L.get(0), getLabel(first));
+        boolean res_middle = compareLabels(sequences_L.get(1), getLabel(middle));
+        boolean res_last = compareLabels(sequences_L.get(2), getLabel(last));
         if (res_first && res_middle && res_last) {  //This means that given sequence of labels was found in the given list of nodes.
             return true;
         } else {
@@ -261,8 +269,8 @@ public class formGroupMatrix {
 
 
     public boolean sequencesN_NOT_DisjointFromSolutionSet(List<Node> solutionSet_Qj, List<Node> sequences_N) {
-        List<Node> solutionSet_Qj_copy = solutionSet_Qj;
-        List<Node> sequences_N_copy = sequences_N;
+        List<Node> solutionSet_Qj_copy = new LinkedList<Node>(solutionSet_Qj);
+        List<Node> sequences_N_copy = new LinkedList<Node>(sequences_N);
         solutionSet_Qj_copy.retainAll(sequences_N_copy);
         if (solutionSet_Qj_copy.size() == 0) {
             return false;  //This means we don't want the "sequences_N" triplet to be added to the solutionSet.
@@ -275,23 +283,27 @@ public class formGroupMatrix {
     //Also, note that we have not covered the case if we were to start with an outcast TLS (like 'D-C-E') in the two "Validate" methods.
 
     //This method = LI(qj,TLS(qi,qj)).
-    public void validateAgainstQj(String qj, List<List<Label>> qj_set, List<Node> solutionSet_Qj) {
-        //while(solutionSet_Qj.size() <= 1) { //Since we don't want a subgraph with 2 or less edges. A single TLS has two edges.
+    public int validateAgainstQj(String qj, List<List<Label>> qj_set, List<Node> solutionSet_Qj) {
+        
         GraphDatabaseService DB = queryToDBServiceMapping.get(qj);
+        int numberOfInstancesInQj = 0;
         try (Transaction tx = DB.beginTx()) {
 
             List<List<Node>> sequences_InNodes = TLS_map_usingNodeIds.get(qj);
             for (List<Label> sequences_L : qj_set) {
                 for (List<Node> sequences_N : sequences_InNodes) {
                     if (checkForThisTriplet(sequences_L, sequences_N)) {
+                        System.out.println("sequences_L--> " + sequences_L);
+                        System.out.println("sequences_N--> " + sequences_N);
+
                         if (solutionSet_Qj.isEmpty()) {
-                            solutionSet_Qj = new LinkedList<Node>() {{
-                                add(sequences_N.get(0));
-                                add(sequences_N.get(1));
-                                add(sequences_N.get(2));
-                            }};
+                            solutionSet_Qj.add(sequences_N.get(0));
+                            solutionSet_Qj.add(sequences_N.get(1));
+                            solutionSet_Qj.add(sequences_N.get(2));
+                            numberOfInstancesInQj++;
                         } else {
                             if (sequencesN_NOT_DisjointFromSolutionSet(solutionSet_Qj, sequences_N)) { //i.e. solutionSet and sequences_N has one or two common nodes.
+                                numberOfInstancesInQj++;
                                 for (Node n : sequences_N) {
                                     if (!solutionSet_Qj.contains(n)) {
                                         solutionSet_Qj.add(n);
@@ -299,27 +311,27 @@ public class formGroupMatrix {
                                 }
                             }
                         }
+                        System.out.println("Solution Set Qj--> " + solutionSet_Qj);
                         break;
                     }
                 }
             }
-            /*if(solutionSet_Qj.size() == 1){*/
-            /*    qj_set.remove(solutionSet_Qj.get(0));*/
-            /*    solutionSet_Qj.clear();*/
-            /*}*/
-            //}
             tx.success();
         }
+        return numberOfInstancesInQj;
     }
 
     public int checkWhichTLSInstancesFormLargestSubgraph(String qi, String qj, List<List<Label>> qj_set) {
         List<Node> solutionSet_Qi = new LinkedList<Node>();
         List<Node> solutionSet_Qj = new LinkedList<Node>();
-        validateAgainstQi(qi, qj_set, solutionSet_Qi);
-        validateAgainstQj(qj, qj_set, solutionSet_Qj);
+        int numberOfInstancesInQi = validateAgainstQi(qi, qj_set, solutionSet_Qi);
+        System.out.println();
+        int numberOfInstancesInQj = validateAgainstQj(qj, qj_set, solutionSet_Qj);
 
         // So, we now have LI(qi,TLS(qi,qj)) and LI(qj,TLS(qi,qj)) for all qi and qj in the form of the Solution Set size.
-        return Math.min(solutionSet_Qi.size(), solutionSet_Qj.size());
+        //System.out.println("numberOfInstancesInQi--> " + numberOfInstancesInQi);
+        //System.out.println("numberOfInstancesInQj--> " + numberOfInstancesInQj);
+        return Math.min(numberOfInstancesInQi, numberOfInstancesInQj);
     }
 
 
@@ -329,17 +341,20 @@ public class formGroupMatrix {
             Map.Entry pairs = (Map.Entry) itr.next();
             Map<String, List<List<Label>>> qj = (Map<String, List<List<Label>>>) pairs.getValue();
             Iterator itr_qj = qj.entrySet().iterator();
-
+            groupMatrix.put((String) pairs.getKey(), new LinkedHashMap<String, Float>());
             while (itr_qj.hasNext()) {
                 Map.Entry pairs_qj = (Map.Entry) itr_qj.next();
                 //I create a new instance here just to avoid editing the values in the map 'qj'.
                 List<List<Label>> qj_set = new LinkedList<List<Label>>((List<List<Label>>) pairs_qj.getValue());
+                System.out.println("Comparing Query: " + (String) pairs.getKey() + " with Query: " + (String) pairs_qj.getKey());
                 int minimumLIValue = checkWhichTLSInstancesFormLargestSubgraph((String) pairs.getKey(), (String) pairs_qj.getKey(), qj_set);
                 int minTLSSizeForQueries = Math.min(TLS_map.get((String) pairs.getKey()).size(), TLS_map.get((String) pairs_qj.getKey()).size());
-                Float GF_value = Float.valueOf(minimumLIValue / minTLSSizeForQueries);
-                groupMatrix.put((String) pairs.getKey(), new LinkedHashMap<String, Float>() {{
-                    put((String) pairs_qj.getKey(), GF_value);
-                }});
+                System.out.println("Numerator of the GF equation: " + minimumLIValue);
+                System.out.println("Denominator of the GF equation: " + minTLSSizeForQueries + "\n");
+                Float GF_value = minimumLIValue / Float.valueOf(minTLSSizeForQueries);
+                
+                groupMatrix.get((String) pairs.getKey()).put((String) pairs_qj.getKey(), GF_value);
+               
             }
         }
 
@@ -394,6 +409,8 @@ public class formGroupMatrix {
         //Forms the group matrix.
         grouping.createGroupMatrix();
         System.out.println("\n\nGroup Matrix: \n" + grouping.groupMatrix);
+
+        //Now put a threshold limit of 0.35 on the Group factor values to make the matrix binary.
     }
 }
 
