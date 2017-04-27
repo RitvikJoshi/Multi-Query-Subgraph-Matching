@@ -375,7 +375,6 @@ public class formGroupMatrix {
             Map.Entry pairs = (Map.Entry) itr.next();
             System.out.println(pairs.getKey() + " = " + pairs.getValue());
         }
-
     }
 
     public void printQueryPairs() {
@@ -392,7 +391,7 @@ public class formGroupMatrix {
         formGroupMatrix grouping = new formGroupMatrix();
         String currentDirectory = System.getProperty("user.dir");
         File[] allFiles = new File(currentDirectory).listFiles();
-        //grouping.parse_testQueries(allFiles);
+
         grouping.generateTLS();
 
         System.out.println("TLS_Map:-\n");
@@ -406,11 +405,28 @@ public class formGroupMatrix {
         grouping.formIntersection_TLSseqs_BetweenQueries();
         grouping.printQueryPairs();
 
-        //Forms the group matrix.
+        //Forms the group matrix (not thresholded).
         grouping.createGroupMatrix();
         System.out.println("\n\nGroup Matrix: \n" + grouping.groupMatrix);
 
+
         //Now put a threshold limit of 0.35 on the Group factor values to make the matrix binary.
+        Iterator itr = grouping.groupMatrix.entrySet().iterator();
+        while(itr.hasNext()){
+            Map.Entry pairs = (Map.Entry)itr.next();
+            Map<String,Float> nested_map = (Map<String,Float>) pairs.getValue();
+            Iterator itr_nested = nested_map.entrySet().iterator();
+            while(itr_nested.hasNext()){
+                Map.Entry pairs_nested = (Map.Entry) itr_nested.next();
+                Float gf_value = (Float) pairs_nested.getValue();
+                if(gf_value > 0.35){
+                    nested_map.put((String)pairs_nested.getKey(),Float.valueOf(1));
+                } else {
+                    nested_map.put((String)pairs_nested.getKey(),Float.valueOf(0));
+                }
+            }
+        }
+        System.out.println("\n\nGroup Matrix (After Thresholding): \n" + grouping.groupMatrix);
     }
 }
 
