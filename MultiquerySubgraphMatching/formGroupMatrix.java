@@ -26,6 +26,7 @@ public class formGroupMatrix {
         String lineRead;
         BufferedReader formatBufferedReader;
         BatchInserter bInserter = null;
+        System.out.println("All Files: ");
         for (File f : files) {
             if (f.isFile() && f.getName().split("\\.")[1].equals("txt")) {
                 try {
@@ -70,7 +71,7 @@ public class formGroupMatrix {
             }
 
         }
-
+        System.out.println("\n");
     }
 
     public boolean compareLabelValue(Node firstNodeOfSeq, Node lastNodeInSeq) {
@@ -171,8 +172,8 @@ public class formGroupMatrix {
 
 
     public void generateTLS() {
-        String databaseDir = "/Users/adityapulekar/Documents/Neo4j/GraphDB_proj/";
-        File[] queries = new File("/Users/adityapulekar/Documents/Neo4j/GraphDB_proj/").listFiles();
+        
+        File[] queries = new File("/Users/adityapulekar/Documents/Neo4j/GraphDB_proj/testQueries").listFiles();
         GraphDatabaseFactory graphInstance = new GraphDatabaseFactory();
         for (File queryFile : queries) {
             if (queryFile.isDirectory() && !queryFile.getName().equals(".DS_Store")) {
@@ -390,8 +391,9 @@ public class formGroupMatrix {
     public static void main(String[] args) {
         formGroupMatrix grouping = new formGroupMatrix();
         String currentDirectory = System.getProperty("user.dir");
-        File[] allFiles = new File(currentDirectory).listFiles();
-
+        System.out.println("Current Directory: "+ currentDirectory);
+        File[] allFiles = new File(currentDirectory+"/testQueries").listFiles();
+        System.out.println("\n");
         grouping.generateTLS();
 
         System.out.println("TLS_Map:-\n");
