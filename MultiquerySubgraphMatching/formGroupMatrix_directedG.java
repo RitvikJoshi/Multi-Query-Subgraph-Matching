@@ -208,8 +208,11 @@ public class formGroupMatrix_directedG {
                 if (Integer.parseInt(queryName.split("q")[1]) > count) {
                     //System.out.println("Retrieved sequences: " + tls_seqs);
                     List<List<Label>> tls_seqs_copy = new LinkedList(tls_seqs);
+                    System.out.println(tls_seqs);
+                    System.out.println(" vs " );
                     //System.out.println("Query " + "q"+String.valueOf(count)+ " being compared to Query " + queryName );
                     List<List<Label>> tls_seqs_toCompare = (List<List<Label>>) pairs.getValue();
+                    System.out.println(tls_seqs_toCompare + "\n");
                     tls_seqs_copy.retainAll(tls_seqs_toCompare);
                     //System.out.println("Comparison output--> " + tls_seqs_copy + "\n");
                     TLS_QueryPairs.get("q" + String.valueOf(count)).put(queryName, tls_seqs_copy);
@@ -223,7 +226,7 @@ public class formGroupMatrix_directedG {
 
     public void generateTLS() {
         //String databaseDir = "/Users/adityapulekar/Documents/Neo4j/GraphDB_proj/";
-        File[] queries = new File("/Users/adityapulekar/Documents/Neo4j/GraphDB_proj/humanQueries_test/").listFiles();
+        File[] queries = new File("/Users/adityapulekar/Documents/Neo4j/GraphDB_proj/yeastQueries_test/").listFiles();
         GraphDatabaseFactory graphInstance = new GraphDatabaseFactory();
         //String[] testQueries = {"q1","q2","q3","q4","q5"};
         for (File queryFile : queries) {
@@ -463,9 +466,9 @@ public class formGroupMatrix_directedG {
     public static void main(String[] args) {
         formGroupMatrix_directedG grouping = new formGroupMatrix_directedG();
         String currentDirectory = System.getProperty("user.dir");
-        File[] allFiles = new File(currentDirectory+"/Human_iGraph_Queries").listFiles();
+        //File[] allFiles = new File(currentDirectory+"/Human_iGraph_Queries").listFiles();
 
-        //grouping.forIGraph(currentDirectory+"/Human_iGraph_Queries");
+        //grouping.forIGraph(currentDirectory+"/Yeast_iGraph_Queries");
 
 
         grouping.generateTLS();
