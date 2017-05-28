@@ -1,18 +1,16 @@
-/**
- * Created by adityapulekar on 4/23/17.
- */
 import java.util.*;
 
 public class queryExecutionOrder {
-    query q1 = new query("q1",0);
+    /*query q1 = new query("q1",0);
     query q2 = new query("q2",0);
     query q3 = new query("q3",0);
     query q4 = new query("q4",0);
     query q5 = new query("q5",0);
     query q6 = new query("q6",0);
     query q7 = new query("q7",0);
-
-    Map<query,List<query>> childrenMapToParents = new LinkedHashMap<query,List<query>>() {{
+*/
+    Map<query,List<query>> childrenMapToParents;
+    /*Map<query,List<query>> childrenMapToParents = new LinkedHashMap<query,List<query>>() {{
         put(q1,new LinkedList<query>(){{ add(q6);}});
         put(q2,new LinkedList<query>());
         put(q3,new LinkedList<query>(){{ add(q1); add(q7);}});
@@ -21,8 +19,9 @@ public class queryExecutionOrder {
         put(q6,new LinkedList<query>());
         put(q7,new LinkedList<query>());
     }};
-
-    Map<query,List<query>> parentsMapToChildren = new LinkedHashMap<query,List<query>>() {{
+*/
+    Map<query,List<query>> parentsMapToChildren;
+  /*  Map<query,List<query>> parentsMapToChildren = new LinkedHashMap<query,List<query>>() {{
         put(q1, new LinkedList<query>(){{ add(q3);}});
         put(q2,new LinkedList<query>());
         put(q3,new LinkedList<query>());
@@ -31,10 +30,15 @@ public class queryExecutionOrder {
         put(q6,new LinkedList<query>(){{ add(q1); add(q4);}});
         put(q7,new LinkedList<query>(){{ add(q3); add(q4); add(q5);}});
     }};
-
+*/
     List<query> roots = new LinkedList<query>();
     List<query> execOrder = new LinkedList<query>();
 
+    queryExecutionOrder(Map<query,List<query>> childrenMapToParents, Map<query,List<query>> parentsMapToChildren){
+        this.childrenMapToParents = childrenMapToParents;
+        this.parentsMapToChildren = parentsMapToChildren;
+    }
+/*
     class query {
         String ID;
         int weight;
@@ -44,6 +48,7 @@ public class queryExecutionOrder {
             weight = wt;
         }
     }
+*/
 
     public List<query> findTheRoots(){
         //Return a list of queries that have no parents. So, we make use of the map --> 'childrenMapToParents'
@@ -140,10 +145,10 @@ public class queryExecutionOrder {
         System.out.println();
     }
 
-    public static void main(String[] args){
+    /*public static void main(String[] args){
         queryExecutionOrder qeo = new queryExecutionOrder();
         qeo.findQueryExecOrder();
         qeo.printQueries(qeo.execOrder,"QueryExecutionOrder");
     }
-
+*/
 }
